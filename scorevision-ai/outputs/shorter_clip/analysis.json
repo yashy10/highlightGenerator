@@ -1,0 +1,45 @@
+{
+  "highlights": [
+    {
+      "timestampSeconds": 3.5,
+      "displayTime": "00:03",
+      "description": "Player 14 opens the game with a confident shot from beyond the arc.",
+      "scoreType": "3-Pointer",
+      "intensity": "Medium",
+      "playerJerseyNumber": "14"
+    },
+    {
+      "timestampSeconds": 53,
+      "displayTime": "00:53",
+      "description": "Number 2 throws down a powerful two-handed dunk on the fast break.",
+      "scoreType": "Dunk",
+      "intensity": "High",
+      "playerJerseyNumber": "2"
+    },
+    {
+      "timestampSeconds": 73.5,
+      "displayTime": "01:13",
+      "description": "Player 5 extends the lead by knocking down a three-pointer from the wing.",
+      "scoreType": "3-Pointer",
+      "intensity": "Medium",
+      "playerJerseyNumber": "5"
+    },
+    {
+      "timestampSeconds": 144,
+      "displayTime": "02:24",
+      "description": "Player 14 answers back with a clean catch-and-shoot three from the top of the key.",
+      "scoreType": "3-Pointer",
+      "intensity": "Medium",
+      "playerJerseyNumber": "14"
+    },
+    {
+      "timestampSeconds": 171.5,
+      "displayTime": "02:51",
+      "description": "Player 0 executes a beautiful spin move in the paint to finish with a soft layup.",
+      "scoreType": "Layup",
+      "intensity": "High",
+      "playerJerseyNumber": "0"
+    }
+  ],
+  "summary": "An energetic sequence featuring sharp shooting from PRO's #14 and dominant plays from MVA, highlighted by a thunderous fast-break dunk by #2 and a skillful spin-move finish by #0."
+}
