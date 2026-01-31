@@ -1,0 +1,49 @@
+{
+  "video_path": "/Users/marco/Desktop/cs/hackathon/Google Deepmind 2026/sample_data/sports-highlight-test.mp4",
+  "video_duration": 441.874771,
+  "num_events": 12,
+  "num_clips": 8,
+  "clips": [
+    {
+      "start": 39.23,
+      "end": 49.23,
+      "path": "clips/clip_0001_39230_49230.mp4"
+    },
+    {
+      "start": 92.67,
+      "end": 102.67,
+      "path": "clips/clip_0002_92670_102670.mp4"
+    },
+    {
+      "start": 150.12,
+      "end": 160.12,
+      "path": "clips/clip_0003_150120_160120.mp4"
+    },
+    {
+      "start": 197.45,
+      "end": 207.45,
+      "path": "clips/clip_0004_197450_207450.mp4"
+    },
+    {
+      "start": 261.89,
+      "end": 271.89,
+      "path": "clips/clip_0005_261890_271890.mp4"
+    },
+    {
+      "start": 306.34,
+      "end": 316.34,
+      "path": "clips/clip_0006_306340_316340.mp4"
+    },
+    {
+      "start": 372.56,
+      "end": 382.56,
+      "path": "clips/clip_0007_372560_382560.mp4"
+    },
+    {
+      "start": 417.78,
+      "end": 427.78,
+      "path": "clips/clip_0008_417780_427780.mp4"
+    }
+  ],
+  "reel": "reel/highlights.mp4"
+}
