@@ -7,7 +7,7 @@ import random
 import sys
 from pathlib import Path
 
-from .pipeline import generate_highlights
+from .pipeline import generate_highlights, generate_auto_highlight
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -139,6 +139,13 @@ def main() -> int:
         help="Number of events for sample scoresheet (default: 12)",
     )
     parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["scoresheet", "auto"],
+        default="scoresheet",
+        help="Mode: 'scoresheet' (default) uses JSONL timestamps, 'auto' uses YOLO player tracking",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable verbose logging",
@@ -158,21 +165,28 @@ def main() -> int:
     
     if not args.video:
         parser.error("--video is required")
-    if not args.scoresheet:
-        parser.error("--scoresheet is required")
-    
+
+    if args.mode == "scoresheet" and not args.scoresheet:
+        parser.error("--scoresheet is required when using scoresheet mode")
+
     try:
-        manifest = generate_highlights(
-            video_path=args.video,
-            scoresheet_path=args.scoresheet,
-            output_dir=args.out,
-            pre_seconds=args.pre,
-            post_seconds=args.post,
-            merge_gap_seconds=args.merge_gap,
-            min_clip_seconds=args.min_clip,
-            max_clip_seconds=args.max_clip,
-            make_reel=args.make_reel,
-        )
+        if args.mode == "auto":
+            manifest = generate_auto_highlight(
+                video_path=args.video,
+                output_dir=args.out,
+            )
+        else:
+            manifest = generate_highlights(
+                video_path=args.video,
+                scoresheet_path=args.scoresheet,
+                output_dir=args.out,
+                pre_seconds=args.pre,
+                post_seconds=args.post,
+                merge_gap_seconds=args.merge_gap,
+                min_clip_seconds=args.min_clip,
+                max_clip_seconds=args.max_clip,
+                make_reel=args.make_reel,
+            )
         
         manifest_path = Path(args.out) / "manifest.json"
         with open(manifest_path, "w", encoding="utf-8") as f:

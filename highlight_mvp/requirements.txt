@@ -1,2 +1,7 @@
-# No external dependencies required - uses only Python standard library
 # FFmpeg must be installed separately (see README.md)
+# Below are needed for --mode auto (YOLO player tracking)
+ultralytics>=8.3.0
+supervision>=0.24.0
+opencv-python>=4.9.0
+numpy>=1.26.0
+torch>=2.1.0

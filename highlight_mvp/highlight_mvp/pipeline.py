@@ -155,3 +155,79 @@ def generate_highlights(
     logger.info("=" * 60)
     
     return manifest
+
+
+def generate_auto_highlight(
+    video_path: str,
+    output_dir: str,
+) -> dict:
+    """
+    Generate a player-tracking highlight video using YOLO multi-signal scoring.
+
+    Automatically detects the most active player and renders a vertical (9:16)
+    highlight video with camera follow and visual effects.
+
+    Args:
+        video_path: Path to the source video file.
+        output_dir: Directory for output highlight video.
+
+    Returns:
+        Manifest dict with video info, target player, scores, and output path.
+
+    Raises:
+        FileNotFoundError: If video doesn't exist.
+        RuntimeError: If YOLO processing fails.
+    """
+    from .auto_highlight import AutoHighlightService
+
+    logger.info("=" * 60)
+    logger.info("Starting auto-highlight generation (YOLO)")
+    logger.info("=" * 60)
+
+    video_path = str(Path(video_path).resolve())
+    output_dir = str(Path(output_dir).resolve())
+
+    if not Path(video_path).exists():
+        raise FileNotFoundError(f"Video not found: {video_path}")
+
+    logger.info(f"Video: {video_path}")
+    logger.info(f"Output: {output_dir}")
+
+    reel_dir = Path(output_dir) / "reel"
+    reel_dir.mkdir(parents=True, exist_ok=True)
+    output_path = str(reel_dir / "highlight.mp4")
+
+    service = AutoHighlightService()
+
+    def on_progress(phase, pct):
+        logger.info(f"  [{phase}] {pct}%")
+
+    result = service.process_video(
+        video_path=video_path,
+        output_path=output_path,
+        progress_callback=on_progress,
+    )
+
+    manifest = {
+        "video_path": video_path,
+        "mode": "auto_highlight",
+        "target_player_id": result["target_id"],
+        "score": result["score"],
+        "signal_table": result["signal_table"],
+        "duration": result["duration"],
+        "frames": result["frames"],
+        "fps": result["fps"],
+        "resolution": result["resolution"],
+        "file_size_mb": result["file_size_mb"],
+        "reel": "reel/highlight.mp4",
+    }
+
+    logger.info("=" * 60)
+    logger.info("Auto-highlight generation complete")
+    logger.info(f"  Target: Player #{result['target_id']}")
+    logger.info(f"  Score: {result['score']:.3f}")
+    logger.info(f"  Duration: {result['duration']:.1f}s")
+    logger.info(f"  Output: {output_path}")
+    logger.info("=" * 60)
+
+    return manifest

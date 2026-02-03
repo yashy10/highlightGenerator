@@ -1,115 +1,142 @@
-# ScoreVision AI - Highlight Generator
+# Highlight Generator
 
-AI-powered sports video highlight detection and clip generation.
+Auto-generate basketball highlight reels with AI narration.
 
-## Architecture
+## What It Does
+
+1. **Upload** a basketball video
+2. **YOLO tracking** identifies all players and scores them using 7 signals (motion, acceleration, jumps, size, centrality, persistence, pose dynamism)
+3. **Auto-crops** to 9:16 vertical format following the highest-scoring player with a smooth broadcast-style camera
+4. **Add Narration** (optional) — uses Gemini to describe the video, GPT to write a sports commentary script, and OpenAI TTS to generate audio, then muxes it onto the video
+
+## Tech Stack
+
+- **Backend**: FastAPI, YOLO11n (ultralytics), OpenCV, supervision, google-genai, openai
+- **Frontend**: Next.js 15, React 19, TailwindCSS
+
+## Project Structure
 
 ```
 highlightGenerator/
-├── backend/           # FastAPI backend (Cloud Run)
-│   ├── routers/       # API endpoints (upload, analyze, clips)
-│   └── services/      # GCS, Gemini, FFmpeg services
-└── scorevision-ai/    # React frontend (Vite)
+├── backend/
+│   ├── main.py                 # FastAPI app entry point
+│   ├── config.py               # Pydantic settings (loads .env)
+│   ├── models.py               # Request/response models
+│   ├── routers/
+│   │   ├── upload.py           # POST /api/upload
+│   │   ├── analyze.py          # POST /api/analyze/{videoId}
+│   │   ├── clips.py            # GET/POST /api/clips/{videoId}
+│   │   └── narration.py        # POST /api/narrate/{videoId}
+│   ├── services/
+│   │   ├── auto_highlight.py   # YOLO tracking + scoring + rendering
+│   │   ├── storage.py          # Local file storage management
+│   │   └── narration.py        # Gemini + OpenAI TTS pipeline
+│   ├── data/                   # Video/clip storage (gitignored)
+│   └── .env                    # API keys (gitignored)
+├── frontend/
+│   ├── src/
+│   │   ├── app/page.tsx        # Main upload/process UI
+│   │   └── components/
+│   │       ├── video-uploader.tsx
+│   │       ├── process-button.tsx
+│   │       └── highlight-viewer.tsx  # Video player + narration button
+│   └── next.config.ts          # Proxies /api to backend
+└── README.md
 ```
 
-## Prerequisites
+## Setup
+
+### Prerequisites
 
 - Python 3.11+
 - Node.js 18+
-- FFmpeg installed locally
-- Google Cloud account (for cloud deployment)
-- Gemini API key
-
-## Running Locally
+- ffmpeg (`brew install ffmpeg`)
 
 ### Backend
 
 ```bash
 cd backend
 
-# Create environment file
-cp .env.example .env
-
-# Edit .env with your credentials:
-# - GOOGLE_CLOUD_PROJECT=your-project-id
-# - GCS_BUCKET=scorevision-videos
-# - GEMINI_API_KEY=your-gemini-api-key
-
 # Install dependencies
-pip install -r requirements.txt
+pip install fastapi uvicorn pydantic-settings python-multipart \
+            ultralytics opencv-python supervision numpy torch \
+            google-genai openai python-dotenv
 
-# Run the server
-uvicorn main:app --reload --port 8080
+# Create .env with your API keys
+cat > .env << EOF
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
+EOF
+
+# Run
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
 ### Frontend
 
 ```bash
-cd scorevision-ai
+cd frontend
 
-# Create environment file (optional, defaults to localhost:8080)
-cp .env.example .env.local
-
-# Install dependencies
 npm install
-
-# Run the dev server
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`.
-
-## Cloud Deployment
-
-### Deploy Backend to Cloud Run
-
-```bash
-cd backend
-
-# Build and push container
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/scorevision-api
-
-# Deploy to Cloud Run
-gcloud run deploy scorevision-api \
-  --image gcr.io/YOUR_PROJECT/scorevision-api \
-  --allow-unauthenticated \
-  --set-env-vars "GCS_BUCKET=scorevision-videos,GEMINI_API_KEY=your-key"
-```
-
-### Deploy Frontend to Vercel
-
-```bash
-cd scorevision-ai
-
-# Set the API URL environment variable in Vercel
-# VITE_API_URL=https://your-cloud-run-url.run.app/api
-
-vercel deploy
-```
+Open http://localhost:3000
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/upload` | POST | Upload video to GCS |
-| `/api/analyze/{videoId}` | POST | Analyze video with Gemini AI |
-| `/api/analyze/{videoId}` | GET | Get cached analysis |
-| `/api/clips/{videoId}` | POST | Generate clips with FFmpeg |
-| `/api/clips/{videoId}` | GET | Get generated clips |
-| `/api/videos/{videoId}` | GET | Get video info |
-| `/health` | GET | Health check |
+| `/api/upload` | POST | Upload video, returns `videoId` |
+| `/api/analyze/{videoId}` | POST | Run YOLO tracking, generate highlight |
+| `/api/clips/{videoId}` | GET | Get highlight video metadata |
+| `/api/narrate/{videoId}` | POST | Add AI narration to highlight |
+| `/api/files/{path}` | GET | Serve video/clip files |
+
+## How the Highlight Algorithm Works
+
+### 7-Signal Scoring
+
+For each tracked player, we compute:
+
+| Signal | Weight | Measures |
+|--------|--------|----------|
+| Motion | 0.25 | Total distance traveled |
+| Acceleration | 0.20 | Speed changes (crossovers, drives) |
+| Vertical jump | 0.20 | Upward bbox movement (shots, dunks) |
+| Size | 0.10 | Bbox area (camera zoom proxy) |
+| Centrality | 0.10 | Distance from frame center |
+| Persistence | 0.10 | Frames present |
+| Aspect ratio variance | 0.05 | Pose dynamism |
+
+The highest-scoring player becomes the target.
+
+### Broadcast Camera
+
+- **EMA smoothing** (alpha=0.04) — prevents jerky panning
+- **Dead zone** (9%) — camera doesn't move for small player movements
+- **Center gravity** (15%) — gently biases toward frame center
+- **Drift back** — returns to center if player disappears
+
+### Output
+
+- 1080x1920 (9:16 vertical, optimized for TikTok/Reels/Shorts)
+- Gold spotlight effect on target player
+- Original FPS preserved
+
+## Narration Pipeline
+
+1. **ffprobe** — get video duration
+2. **Gemini** — upload video and generate detailed description
+3. **GPT** — write a sports commentary script (word limit based on duration)
+4. **OpenAI TTS** — generate narration audio (voice: coral)
+5. **ffmpeg** — mux audio onto video
 
 ## Environment Variables
 
-### Backend
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_CLOUD_PROJECT` | GCP project ID |
-| `GCS_BUCKET` | GCS bucket name for video storage |
-| `GEMINI_API_KEY` | Gemini API key |
-| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) |
-
-### Frontend
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API URL (default: `http://localhost:8080/api`) |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | For narration | OpenAI API key |
+| `GOOGLE_API_KEY` | For narration | Google AI (Gemini) API key |
+| `CORS_ORIGINS` | No | Allowed origins (default: `*`) |
+| `STORAGE_DIR` | No | Data directory (default: `./data`) |

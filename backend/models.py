@@ -28,10 +28,24 @@ class AnalyzeRequest(BaseModel):
     pass
 
 
+class AutoHighlightResult(BaseModel):
+    targetPlayerId: int
+    score: float
+    signalTable: dict[str, float]
+    duration: float
+    frames: int
+    fps: float
+    resolution: str
+    fileSizeMb: float
+
+
 class AnalyzeResponse(BaseModel):
     highlights: list[Highlight]
     summary: str
     videoId: str
+    autoHighlight: Optional[AutoHighlightResult] = None
+    highlightVideoUrl: Optional[str] = None
+    highlightSignedUrl: Optional[str] = None
 
 
 class ClipsRequest(BaseModel):
@@ -62,6 +76,11 @@ class VideoInfo(BaseModel):
     uploadedAt: str
     analyzed: bool
     hasClips: bool
+
+
+class NarrationResponse(BaseModel):
+    videoId: str
+    narratedVideoUrl: str
 
 
 class HealthResponse(BaseModel):
